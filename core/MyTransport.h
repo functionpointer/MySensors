@@ -423,20 +423,22 @@ uint8_t transportPingNode(const uint8_t targetId);
 * @param message
 * @return true if message sent successfully
 */
-bool transportRouteMessage(MyMessage &message);
+bool transportRouteMessage(MyMessage &message, const bool scream = false);
+
 /**
 * @brief Send and route message according to destination with transport state check
 * @param message
 * @return true if message sent successfully and false if sending error or transport !OK
 */
-bool transportSendRoute(MyMessage &message);
+bool transportSendRoute(MyMessage &message, const bool scream = false);
+
 /**
 * @brief Send message to recipient
 * @param to Recipient of message
 * @param message
 * @return true if message sent successfully
 */
-bool transportSendWrite(const uint8_t to, MyMessage &message);
+bool transportSendWrite(const uint8_t to, MyMessage &message, const bool scream);
 /**
 * @brief Check uplink to GW, includes flooding control
 * @param force to override flood control timer

@@ -170,7 +170,7 @@ bool sendSketchInfo(const __FlashStringHelper *name, const __FlashStringHelper *
  * the message, with message.isEcho() set to true and sender/destination switched.
  * @return true Returns true if message reached the first stop on its way to destination.
  */
-bool send(MyMessage &msg, const bool requestEcho = false);
+bool send(MyMessage &msg, const bool requestEcho = false, const bool scream = false);
 
 /**
  * Send this nodes battery level to gateway.
@@ -453,7 +453,7 @@ void _registerNode(void);
 * @param message
 * @return true Returns true if message reached the first stop on its way to destination.
 */
-bool _sendRoute(MyMessage &message);
+bool _sendRoute(MyMessage &message, const bool scream = false);
 /**
 * @brief Callback for incoming messages
 */

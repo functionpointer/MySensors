@@ -137,7 +137,7 @@ bool transportHALReceive(MyMessage *inMsg, uint8_t *msgLength)
 }
 
 bool transportHALSend(const uint8_t nextRecipient, const MyMessage *outMsg, const uint8_t len,
-                      const bool noACK)
+                      const bool noACK, const bool scream)
 {
 	if (outMsg == NULL) {
 
@@ -173,7 +173,7 @@ bool transportHALSend(const uint8_t nextRecipient, const MyMessage *outMsg, cons
 	const uint8_t finalLength = len;
 #endif
 
-	bool result = transportSend(nextRecipient, (void *)tx_data, finalLength, noACK);
+	bool result = transportSend(nextRecipient, (void *)tx_data, finalLength, noACK, scream);
 	TRANSPORT_HAL_DEBUG(PSTR("THA:SND:MSG LEN=%" PRIu8 ",RES=%" PRIu8 "\n"), finalLength, result);
 	return result;
 }

@@ -57,9 +57,9 @@ uint8_t transportGetAddress(void)
 	return RFM69_getAddress();
 }
 
-bool transportSend(const uint8_t to, const void *data, uint8_t len, const bool noACK)
+bool transportSend(const uint8_t to, const void *data, uint8_t len, const bool noACK, const bool scream)
 {
-	return RFM69_sendWithRetry(to, data, len, noACK);
+	return RFM69_sendWithRetry(to, data, len, noACK, scream);
 }
 
 bool transportDataAvailable(void)
@@ -202,13 +202,13 @@ uint8_t transportGetAddress(void)
 	return _address;
 }
 
-bool transportSend(const uint8_t to, const void *data, const uint8_t len, const bool noACK)
+bool transportSend(const uint8_t to, const void *data, const uint8_t len, const bool noACK, const bool scream)
 {
 	if (noACK) {
-		(void)_radio.sendWithRetry(to, data, len, 0, 0);
+		(void)_radio.sendWithRetry(to, data, len, 0, 0, scream);
 		return true;
 	}
-	return _radio.sendWithRetry(to, data, len);
+	return _radio.sendWithRetry(to, data, len, scream);
 }
 
 bool transportDataAvailable(void)

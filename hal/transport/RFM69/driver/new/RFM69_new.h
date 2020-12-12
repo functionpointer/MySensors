@@ -144,6 +144,14 @@
 #define RFM69_TARGET_RSSI_DBM            (-75)			//!< RSSI target
 #define RFM69_HIGH_POWER_DBM             (18u)			//!< High power threshold, dBm
 
+#if !defined(MY_RFM69_SCREAM_DELAY)
+#define MY_RFM69_SCREAM_DELAY 5
+#endif
+
+#if !defined(MY_RFM69_SCREAM_COUNT)
+#define MY_RFM69_SCREAM_COUNT 15
+#endif
+
 #if !defined(MY_RFM69_TX_TIMEOUT_MS)
 #define MY_RFM69_TX_TIMEOUT_MS           (2*1000ul)	//!< Timeout for packet sent
 #endif
@@ -391,7 +399,7 @@ LOCAL uint8_t RFM69_receive(uint8_t *buf, const uint8_t maxBufSize);
 * @param increaseSequenceCounter
 * @return True if packet sent
 */
-LOCAL bool RFM69_sendFrame(rfm69_packet_t *packet, const bool increaseSequenceCounter = true);
+LOCAL bool RFM69_sendFrame(rfm69_packet_t *packet, const bool increaseSequenceCounter = true, const bool csma = true);
 
 /**
 * @brief RFM69_send
@@ -403,7 +411,7 @@ LOCAL bool RFM69_sendFrame(rfm69_packet_t *packet, const bool increaseSequenceCo
 * @return True if frame sent
 */
 LOCAL bool RFM69_send(const uint8_t recipient, uint8_t *data, const uint8_t len,
-                      const rfm69_controlFlags_t flags, const bool increaseSequenceCounter = true);
+                      const rfm69_controlFlags_t flags, const bool increaseSequenceCounter = true, const bool csma = true);
 
 /**
 * @brief Sets the transmitter and receiver center frequency
@@ -471,7 +479,8 @@ LOCAL void RFM69_sendACK(const uint8_t recipient, const rfm69_sequenceNumber_t s
 */
 LOCAL bool RFM69_sendWithRetry(const uint8_t recipient, const void *buffer,
                                const uint8_t bufferSize,
-                               const bool noACK);
+                               const bool noACK,
+							   const bool scream);
 
 /**
 * @brief RFM69_setRadioMode

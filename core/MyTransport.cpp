@@ -509,7 +509,7 @@ bool transportAssignNodeID(const uint8_t newNodeId)
 	}
 }
 
-bool transportRouteMessage(MyMessage &message)
+bool transportRouteMessage(MyMessage &message, const bool scream)
 {
 	const uint8_t destination = message.getDestination();
 
@@ -547,17 +547,18 @@ bool transportRouteMessage(MyMessage &message)
 #else
 		if (destination > GATEWAY_ADDRESS && destination < BROADCAST_ADDRESS) {
 			// node2node traffic: assume node is in vincinity. If transmission fails, hand over to parent
-			if (transportSendWrite(destination, message)) {
+			if (transportSendWrite(destination, message, scream)) {
 				TRANSPORT_DEBUG(PSTR("TSF:RTE:N2N OK\n"));
 				return true;
 			}
 			TRANSPORT_DEBUG(PSTR("!TSF:RTE:N2N FAIL\n"));
+			return false;//nope, do not hand over to parent and just fail
 		}
 		route = _transportConfig.parentNodeId;	// not a repeater, all traffic routed via parent
 #endif
 	}
 	// send message
-	const bool result = transportSendWrite(route, message);
+	const bool result = transportSendWrite(route, message, scream);
 #if !defined(MY_GATEWAY_FEATURE)
 	// update counter
 	if (route == _transportConfig.parentNodeId) {
@@ -585,11 +586,11 @@ bool transportRouteMessage(MyMessage &message)
 	return result;
 }
 
-bool transportSendRoute(MyMessage &message)
+bool transportSendRoute(MyMessage &message, const bool scream)
 {
 	bool result = false;
 	if (isTransportReady()) {
-		result = transportRouteMessage(message);
+		result = transportRouteMessage(message, scream);
 	} else {
 		// TNR: transport not ready
 		TRANSPORT_DEBUG(PSTR("!TSF:SND:TNR\n"));
@@ -964,7 +965,7 @@ void transportProcessFIFO(void)
 #endif
 }
 
-bool transportSendWrite(const uint8_t to, MyMessage &message)
+bool transportSendWrite(const uint8_t to, MyMessage &message, const bool scream)
 {
 	message.setLast(_transportConfig.nodeId); // Update last
 
@@ -978,11 +979,11 @@ bool transportSendWrite(const uint8_t to, MyMessage &message)
 	// msg length changes if signed
 	const uint8_t totalMsgLength = HEADER_SIZE + ( message.getSigned() ? MAX_PAYLOAD_SIZE :
 	                               message.getLength() );
-	const bool noACK = _transportConfig.passiveMode || (to == BROADCAST_ADDRESS);
+	const bool noACK = _transportConfig.passiveMode || (to == BROADCAST_ADDRESS) || scream;
 	// send
 	setIndication(INDICATION_TX);
 	const bool result = transportHALSend(to, &message, totalMsgLength,
-	                                     noACK);
+	                                     noACK, scream);
 
 	TRANSPORT_DEBUG(PSTR("%sTSF:MSG:SEND,%" PRIu8 "-%" PRIu8 "-%" PRIu8 "-%" PRIu8 ",s=%" PRIu8 ",c=%"
 	                     PRIu8 ",t=%" PRIu8 ",pt=%" PRIu8 ",l=%" PRIu8 ",sg=%" PRIu8 ",ft=%" PRIu8 ",st=%s:%s\n"),

@@ -311,7 +311,7 @@ controllerConfig_t getControllerConfig(void)
 }
 
 // cppcheck-suppress constParameter
-bool _sendRoute(MyMessage &message)
+bool _sendRoute(MyMessage &message, bool scream)
 {
 #if defined(MY_CORE_ONLY)
 	(void)message;
@@ -324,13 +324,13 @@ bool _sendRoute(MyMessage &message)
 	}
 #endif
 #if defined(MY_SENSOR_NETWORK)
-	return transportSendRoute(message);
+	return transportSendRoute(message, scream);
 #else
 	return false;
 #endif
 }
 
-bool send(MyMessage &message, const bool requestEcho)
+bool send(MyMessage &message, const bool requestEcho, const bool scream)
 {
 	message.setSender(getNodeId());
 	message.setCommand(C_SET);
@@ -338,13 +338,13 @@ bool send(MyMessage &message, const bool requestEcho)
 
 #if defined(MY_REGISTRATION_FEATURE) && !defined(MY_GATEWAY_FEATURE)
 	if (_coreConfig.nodeRegistered) {
-		return _sendRoute(message);
+		return _sendRoute(message, scream);
 	} else {
 		CORE_DEBUG(PSTR("!MCO:SND:NODE NOT REG\n"));	// node not registered
 		return false;
 	}
 #else
-	return _sendRoute(message);
+	return _sendRoute(message, scream);
 #endif
 }
 

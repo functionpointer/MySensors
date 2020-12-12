@@ -102,7 +102,7 @@ uint8_t transportHALGetAddress(void);
 * @return true if message sent successfully
 */
 bool transportHALSend(const uint8_t nextRecipient, const MyMessage *outMsg, const uint8_t len,
-                      const bool noACK);
+                      const bool noACK, const bool scream);
 /**
 * @brief Verify if RX FIFO has pending messages
 * @return true if message available in RX FIFO
