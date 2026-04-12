@@ -6,7 +6,7 @@
  * network topology allowing messages to be routed to nodes.
  *
  * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2020 Sensnology AB
+ * Copyright (C) 2013-2026 Sensnology AB
  * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
  *
  * Documentation: http://www.mysensors.org
@@ -33,9 +33,9 @@
  * This string indicate what configuration the node is running with.
  *
  * The string symbols are ordered in the following way:
- * | Setting   |       Reset       |       Radio       |         OTA        |       Node       |   Architecture   |      Signing     |     Buffering     |   Encryption
- * |-----------|-------------------|-------------------|--------------------|------------------|------------------|------------------|-------------------|-----------------
- * | Indicator | @ref MY_CAP_RESET | @ref MY_CAP_RADIO | @ref MY_CAP_OTA_FW | @ref MY_CAP_TYPE | @ref MY_CAP_ARCH | @ref MY_CAP_SIGN | @ref MY_CAP_RXBUF | @ref MY_CAP_ENCR
+ * | Setting   |       Reset       |       Transport       |         OTA        |       Node       |   Architecture   |      Signing     |     Buffering     |   Encryption
+ * |-----------|-------------------|-----------------------|--------------------|------------------|------------------|------------------|-------------------|-----------------
+ * | Indicator | @ref MY_CAP_RESET | @ref MY_CAP_TRANSPORT | @ref MY_CAP_OTA_FW | @ref MY_CAP_TYPE | @ref MY_CAP_ARCH | @ref MY_CAP_SIGN | @ref MY_CAP_RXBUF | @ref MY_CAP_ENCR
  *
  * @see MY_CAPABILITIES
  *
@@ -80,36 +80,45 @@
 
 // Transport
 /**
- * @def MY_CAP_RADIO
+ * @def MY_CAP_TRANSPORT
  * @brief Indicate the type of transport selected.
  *
- * @see MY_RADIO_RF24, MY_RADIO_NRF5_ESB, MY_RADIO_RFM69, MY_RFM69_NEW_DRIVER, MY_RADIO_RFM95, MY_RS485
+ * @see MY_RADIO_RF24, MY_RADIO_NRF5_ESB, MY_RADIO_RFM69, MY_RFM69_NEW_DRIVER, MY_RADIO_RFM95, MY_RS485, MY_PJON, MY_RADIO_SX126x, MY_RADIO_CC1101
  *
- * | Radio        | Indicator
+ * | Transport    | Indicator
  * |--------------|----------
  * | nRF24/nRF5   | N
  * | %RFM69 (old) | R
  * | %RFM69 (new) | P
  * | RFM95        | L
  * | RS485        | S
+ * | PJSON        | J
+ * | SX126x       | X
+ * | CC1101       | C
  * | None         | -
  */
 #if defined(MY_RADIO_RF24) || defined(MY_RADIO_NRF5_ESB)
-#define MY_CAP_RADIO "N"
+#define MY_CAP_TRANSPORT "N"
 #elif defined(MY_RADIO_RFM69)
 #if !defined(MY_RFM69_NEW_DRIVER)
 // old RFM69 driver
-#define MY_CAP_RADIO "R"
+#define MY_CAP_TRANSPORT "R"
 #else
 // new RFM69 driver
-#define MY_CAP_RADIO "P"
+#define MY_CAP_TRANSPORT "P"
 #endif
 #elif defined(MY_RADIO_RFM95)
-#define MY_CAP_RADIO "L"
+#define MY_CAP_TRANSPORT "L"
 #elif defined(MY_RS485)
-#define MY_CAP_RADIO "S"
+#define MY_CAP_TRANSPORT "S"
+#elif defined(MY_PJON)
+#define MY_CAP_TRANSPORT "J"
+#elif defined(MY_RADIO_SX126x)
+#define MY_CAP_TRANSPORT "X"
+#elif defined(MY_RADIO_CC1101)
+#define MY_CAP_TRANSPORT "C"
 #else
-#define MY_CAP_RADIO "-"
+#define MY_CAP_TRANSPORT "-"
 #endif
 
 // Node type
@@ -141,7 +150,7 @@
  * @def MY_CAP_ARCH
  * @brief Indicate the architecture.
  *
- * @see ARDUINO_ARCH_SAMD, ARDUINO_ARCH_NRF5, ARDUINO_ARCH_ESP8266, ARDUINO_ARCH_ESP32, ARDUINO_ARCH_AVR, ARDUINO_ARCH_STM32F1, TEENSYDUINO
+ * @see ARDUINO_ARCH_SAMD, ARDUINO_ARCH_NRF5, ARDUINO_ARCH_ESP8266, ARDUINO_ARCH_ESP32, ARDUINO_ARCH_AVR, ARDUINO_ARCH_STM32, TEENSYDUINO
  *
  * | Architecture | Indicator
  * |--------------|----------
@@ -150,7 +159,7 @@
  * | ESP8266      | E
  * | ESP32        | F
  * | AVR          | A
- * | STM32F1      | M
+ * | STM32        | M
  * | TEENSY       | T
  * | Linux        | L
  * | Unknown      | -
@@ -163,9 +172,9 @@
 #define MY_CAP_ARCH "E"
 #elif defined(ARDUINO_ARCH_ESP32)
 #define MY_CAP_ARCH "F"
-#elif defined(ARDUINO_ARCH_AVR)
+#elif defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_MEGAAVR)
 #define MY_CAP_ARCH "A"
-#elif defined(ARDUINO_ARCH_STM32F1)
+#elif defined(ARDUINO_ARCH_STM32)
 #define MY_CAP_ARCH "M"
 #elif defined(__arm__) && defined(TEENSYDUINO)
 #define MY_CAP_ARCH "T"
@@ -237,9 +246,9 @@
  * @def MY_CAPABILITIES
  * @brief This is the resulting capabilities string.
  *
- * @see MY_CAP_RESET, MY_CAP_RADIO, MY_CAP_OTA_FW, MY_CAP_TYPE, MY_CAP_ARCH, MY_CAP_SIGN, MY_CAP_RXBUF, MY_CAP_ENCR
+ * @see MY_CAP_RESET, MY_CAP_TRANSPORT, MY_CAP_OTA_FW, MY_CAP_TYPE, MY_CAP_ARCH, MY_CAP_SIGN, MY_CAP_RXBUF, MY_CAP_ENCR
  */
-#define MY_CAPABILITIES MY_CAP_RESET MY_CAP_RADIO MY_CAP_OTA_FW MY_CAP_TYPE MY_CAP_ARCH MY_CAP_SIGN MY_CAP_RXBUF MY_CAP_ENCR
+#define MY_CAPABILITIES MY_CAP_RESET MY_CAP_TRANSPORT MY_CAP_OTA_FW MY_CAP_TYPE MY_CAP_ARCH MY_CAP_SIGN MY_CAP_RXBUF MY_CAP_ENCR
 
 /** @}*/ // End of MyCapabilities group
 #endif /* MyCapabilities_h */

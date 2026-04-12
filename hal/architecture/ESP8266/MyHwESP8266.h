@@ -6,7 +6,7 @@
  * network topology allowing messages to be routed to nodes.
  *
  * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2020 Sensnology AB
+ * Copyright (C) 2013-2026 Sensnology AB
  * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
  *
  * Documentation: http://www.mysensors.org
@@ -28,6 +28,7 @@
 #include <Arduino.h>
 #endif
 
+#define MY_HW_HAS_GETENTROPY
 #define CRYPTO_LITTLE_ENDIAN
 
 #ifndef MY_SERIALDEVICE
@@ -57,7 +58,6 @@ void hwWriteConfigBlock(void *buf, void *addr, size_t length);
 void hwWriteConfig(const int addr, uint8_t value);
 uint8_t hwReadConfig(const int addr);
 ssize_t hwGetentropy(void *__buffer, size_t __length);
-//#define MY_HW_HAS_GETENTROPY
 
 // SOFTSPI
 #ifdef MY_SOFTSPI

@@ -6,7 +6,7 @@
  * network topology allowing messages to be routed to nodes.
  *
  * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2020 Sensnology AB
+ * Copyright (C) 2013-2026 Sensnology AB
  * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
  *
  * Documentation: http://www.mysensors.org
@@ -1343,12 +1343,14 @@ static void	probe_and_print_peripherals(void)
 	    F("+--------------+--------------+--------------+------------------------------+--------+"));
 #if defined(ARDUINO_ARCH_AVR)
 	Serial.print(F("| AVR          | DETECTED     | N/A          | "));
+#elif defined(ARDUINO_ARCH_MEGAAVR)
+	Serial.print(F("| megaAVR      | DETECTED     | N/A          | "));
 #elif defined(ARDUINO_ARCH_ESP8266)
 	Serial.print(F("| ESP8266      | DETECTED     | N/A          | "));
 #elif defined(ARDUINO_ARCH_SAMD)
 	Serial.print(F("| SAMD         | DETECTED     | N/A          | "));
-#elif defined(ARDUINO_ARCH_STM32F1)
-	Serial.print(F("| STM32F1      | DETECTED     | N/A          | "));
+#elif defined(ARDUINO_ARCH_STM32)
+	Serial.print(F("| STM32        | DETECTED     | N/A          | "));
 #elif defined(__linux__)
 	Serial.print(F("| Linux        | DETECTED     | N/A          | "));
 #else

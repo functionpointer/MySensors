@@ -6,7 +6,7 @@
  * network topology allowing messages to be routed to nodes.
  *
  * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2020 Sensnology AB
+ * Copyright (C) 2013-2026 Sensnology AB
  * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
  *
  * Documentation: http://www.mysensors.org
@@ -362,9 +362,9 @@ int8_t hwCPUTemperature(void)
 #endif
 }
 
-uint16_t hwFreeMem(void)
+uint16_t __attribute__((noinline)) hwFreeMem(void)
 {
 	extern int __heap_start, *__brkval;
-	int v;
+	volatile int v;
 	return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }

@@ -6,7 +6,7 @@
 * network topology allowing messages to be routed to nodes.
 *
 * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
-* Copyright (C) 2013-2020 Sensnology AB
+* Copyright (C) 2013-2026 Sensnology AB
 * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
 *
 * Documentation: http://www.mysensors.org
@@ -16,6 +16,12 @@
 * modify it under the terms of the GNU General Public License
 * version 2 as published by the Free Software Foundation.
 */
+
+#ifdef AES
+#pragma push_macro("AES") // Save STM32 AES Macro
+#undef AES // Allow MySensors AES compilation to proceed 
+#define __STM32_AES_SAVED
+#endif
 
 #include "MyCryptoGeneric.h"
 
@@ -43,3 +49,8 @@ void AES128CBCDecrypt(uint8_t *iv, uint8_t *buffer, const size_t dataLength)
 {
 	_aes.cbc_decrypt((byte *)buffer, (byte *)buffer, dataLength / 16, iv);
 }
+
+#ifdef __STM32_AES_SAVED
+#pragma pop_macro("AES") // Restore STM32 AES Macro
+#undef __STM32_AES_SAVED
+#endif

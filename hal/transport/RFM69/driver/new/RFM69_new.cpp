@@ -6,7 +6,7 @@
  * network topology allowing messages to be routed to nodes.
  *
  * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2020 Sensnology AB
+ * Copyright (C) 2013-2026 Sensnology AB
  * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
  *
  * Documentation: http://www.mysensors.org
@@ -25,7 +25,7 @@
  *	  Copyright Thomas Studwell (2014,2015)
  * - MySensors generic radio driver implementation Copyright (C) 2017, 2018 Olivier Mauti <olivier@mysensors.org>
  *
- * Changes by : @tekka, @scalz, @marceloagno
+ * Changes by : @tekka, @scalz, @marceloagno, @docbender
  *
  * Definitions for Semtech SX1231/H radios:
  * https://www.semtech.com/uploads/documents/sx1231.pdf
@@ -250,8 +250,9 @@ LOCAL void IRQ_HANDLER_ATTR RFM69_interruptHandler(void)
 
 LOCAL void RFM69_interruptHandling(void)
 {
+	const uint8_t regIrqFlags1 = RFM69_readReg(RFM69_REG_IRQFLAGS1);
 	const uint8_t regIrqFlags2 = RFM69_readReg(RFM69_REG_IRQFLAGS2);
-	if (RFM69.radioMode == RFM69_RADIO_MODE_RX && (regIrqFlags2 & RFM69_IRQFLAGS2_PAYLOADREADY)) {
+	if (RFM69.radioMode == RFM69_RADIO_MODE_RX && (regIrqFlags1 & RFM69_IRQFLAGS1_AUTOMODE)) {
 		(void)RFM69_setRadioMode(RFM69_RADIO_MODE_STDBY);
 		// use the fifo level irq as indicator if header bytes received
 		if (regIrqFlags2 & RFM69_IRQFLAGS2_FIFOLEVEL) {
@@ -370,7 +371,7 @@ LOCAL bool RFM69_channelFree(void)
 {
 	// returns true if channel activity under RFM69_CSMA_LIMIT_DBM
 	const rfm69_RSSI_t RSSI = RFM69_readRSSI(false);
-	RFM69_DEBUG(PSTR("RFM69:CSMA:RSSI=%" PRIi16 ",RX=%" PRIu8 "\n"), RFM69_internalToRSSI(RSSI), RFM69.radioMode==RFM69_RADIO_MODE_RX);
+	//RFM69_DEBUG(PSTR("RFM69:CSMA:RSSI=%" PRIi16 ",RX=%" PRIu8 "\n"), RFM69_internalToRSSI(RSSI), RFM69.radioMode==RFM69_RADIO_MODE_RX);
 	return (RSSI > RFM69_RSSItoInternal(MY_RFM69_CSMA_LIMIT_DBM));
 }
 
@@ -390,7 +391,7 @@ LOCAL bool RFM69_sendFrame(rfm69_packet_t *packet, const bool increaseSequenceCo
 					transportProcessMessage();
 					(void)RFM69_setRadioMode(RFM69_RADIO_MODE_RX);
 				}
-				doYield();		
+				doYield();
 		}
 	} else {
 		RFM69.radioMode = RFM69_RADIO_MODE_STDBY;
@@ -436,6 +437,16 @@ LOCAL bool RFM69_send(const uint8_t recipient, uint8_t *data, const uint8_t len,
 	(void)memcpy((void *)&packet.payload, (void *)data, packet.payloadLen); // copy payload
 	packet.header.packetLen = packet.payloadLen + (RFM69_HEADER_LEN - 1); // -1 length byte
 	return RFM69_sendFrame(&packet, increaseSequenceCounter, csma);
+}
+
+LOCAL uint32_t RFM69_getFrequency(void)
+{
+	uint32_t freqHz;
+	freqHz = (uint32_t)RFM69_readReg(RFM69_REG_FRFMSB) << 16;
+	freqHz |= RFM69_readReg(RFM69_REG_FRFMID) << 8;
+	freqHz |= RFM69_readReg(RFM69_REG_FRFLSB);
+	freqHz *= RFM69_FSTEP;
+	return freqHz;
 }
 
 LOCAL void RFM69_setFrequency(const uint32_t frequencyHz)
@@ -514,8 +525,10 @@ LOCAL bool RFM69_setRadioMode(const rfm69_radio_mode_t newRadioMode)
 
 	if (newRadioMode == RFM69_RADIO_MODE_STDBY) {
 		regMode = RFM69_OPMODE_SEQUENCER_ON | RFM69_OPMODE_LISTEN_OFF | RFM69_OPMODE_STANDBY;
+		RFM69_DEBUG(PSTR("RFM69:RSB\n"));	// put radio to standby
 	} else if (newRadioMode == RFM69_RADIO_MODE_SLEEP) {
 		regMode = RFM69_OPMODE_SEQUENCER_OFF | RFM69_OPMODE_LISTEN_OFF | RFM69_OPMODE_SLEEP;
+		RFM69_DEBUG(PSTR("RFM69:RSL\n"));	// put radio to sleep
 	} else if (newRadioMode == RFM69_RADIO_MODE_RX) {
 		RFM69.dataReceived = false;
 		RFM69.ackReceived = false;
@@ -525,14 +538,18 @@ LOCAL bool RFM69_setRadioMode(const rfm69_radio_mode_t newRadioMode)
 		RFM69_setHighPowerRegs(false);
 		RFM69_writeReg(RFM69_REG_PACKETCONFIG2,
 		               (RFM69_readReg(RFM69_REG_PACKETCONFIG2) & 0xFB) | RFM69_PACKET2_RXRESTART); // avoid RX deadlocks
+		RFM69_DEBUG(PSTR("RFM69:RRX\n"));
 	} else if (newRadioMode == RFM69_RADIO_MODE_TX) {
 		regMode = RFM69_OPMODE_SEQUENCER_ON | RFM69_OPMODE_LISTEN_OFF | RFM69_OPMODE_TRANSMITTER;
 		RFM69_writeReg(RFM69_REG_DIOMAPPING1, RFM69_DIOMAPPING1_DIO0_00); // Interrupt on PacketSent, DIO0
 		RFM69_setHighPowerRegs(RFM69.powerLevel >= (rfm69_powerlevel_t)RFM69_HIGH_POWER_DBM);
+		RFM69_DEBUG(PSTR("RFM69:RTX\n"));
 	} else if (newRadioMode == RFM69_RADIO_MODE_SYNTH) {
 		regMode = RFM69_OPMODE_SEQUENCER_ON | RFM69_OPMODE_LISTEN_OFF | RFM69_OPMODE_SYNTHESIZER;
+		RFM69_DEBUG(PSTR("RFM69:RSY\n"));
 	} else {
 		regMode = RFM69_OPMODE_SEQUENCER_ON | RFM69_OPMODE_LISTEN_OFF | RFM69_OPMODE_STANDBY;
+		RFM69_DEBUG(PSTR("RFM69:RSB\n"));	// put radio to standby
 	}
 
 	// set new mode
@@ -567,13 +584,13 @@ LOCAL void RFM69_powerDown(void)
 
 LOCAL bool RFM69_sleep(void)
 {
-	RFM69_DEBUG(PSTR("RFM69:RSL\n"));	// put radio to sleep
+	// put radio to sleep
 	return RFM69_setRadioMode(RFM69_RADIO_MODE_SLEEP);
 }
 
 LOCAL bool RFM69_standBy(void)
 {
-	RFM69_DEBUG(PSTR("RFM69:RSB\n"));	// put radio to standby
+	// put radio to standby
 	return RFM69_setRadioMode(RFM69_RADIO_MODE_STDBY);
 }
 
@@ -621,6 +638,7 @@ LOCAL void RFM69_ATCmode(const bool onOff, const int16_t targetRSSI)
 	RFM69.ATCtargetRSSI = RFM69_RSSItoInternal(targetRSSI);
 }
 
+
 LOCAL bool RFM69_sendWithRetry(const uint8_t recipient, const void *buffer,
                                const uint8_t bufferSize, const bool noACK, const bool scream)
 {
@@ -630,16 +648,18 @@ LOCAL bool RFM69_sendWithRetry(const uint8_t recipient, const void *buffer,
 		rfm69_controlFlags_t flags = 0u; // reset all flags
 		RFM69_setACKRequested(flags, !noACK);
 		RFM69_setACKRSSIReport(flags, RFM69.ATCenabled);
-		if(scream) {
-			for(retry=0;retry<MY_RFM69_SCREAM_COUNT;retry++) {
-				(void)RFM69_send(recipient, (uint8_t *)buffer, bufferSize, flags, !retry, false);
-				delay(MY_RFM69_SCREAM_DELAY);
-			}
-			return true;
-		} else {
-			(void)RFM69_send(recipient, (uint8_t *)buffer, bufferSize, flags, !retry, true);
+	    if (scream) {
+	      for (retry = 0; retry < MY_RFM69_SCREAM_COUNT; retry++) {
+	        (void)RFM69_send(recipient, (uint8_t *)buffer, bufferSize, flags, !retry, false);
+	        delay(MY_RFM69_SCREAM_DELAY);
+	      }
+	      return true;
+	    } else {
+	      if (!RFM69_send(recipient, (uint8_t *)buffer, bufferSize, flags, !retry, true)) {
+	        RFM69_DEBUG(PSTR("RFM69:SWR:SEND,NOIRQ\n"));
+	      }
 		}
-		
+
 		if (noACK) {
 			// no ACK requested
 			return true;
@@ -758,6 +778,7 @@ LOCAL void RFM69_setConfiguration(void)
 		{ RFM69_REG_PAYLOADLENGTH, RFM69_MAX_PACKET_LEN }, // in variable length mode: the max frame size, not used in TX
 		{ RFM69_REG_NODEADRS, RFM69_BROADCAST_ADDRESS },	// init
 		{ RFM69_REG_BROADCASTADRS, RFM69_BROADCAST_ADDRESS },
+		{ RFM69_REG_AUTOMODES, RFM69_AUTOMODES_ENTER_PAYLOADREADY | RFM69_AUTOMODES_EXIT_FIFOEMPTY | RFM69_AUTOMODES_INTERMEDIATE_STANDBY },
 		{ RFM69_REG_FIFOTHRESH, RFM69_FIFOTHRESH_TXSTART_FIFOTHRESH | (RFM69_HEADER_LEN - 1) },	// start transmitting when rfm69 header loaded, fifo level irq when header bytes received (irq asserted when n bytes exceeded)
 		{ RFM69_REG_PACKETCONFIG2, RFM69_PACKET2_RXRESTARTDELAY_2BITS | RFM69_PACKET2_AUTORXRESTART_OFF | RFM69_PACKET2_AES_OFF },
 		{ RFM69_REG_TESTDAGC, RFM69_DAGC_IMPROVED_LOWBETA0 }, // continuous DAGC mode, use 0x30 if afc offset == 0

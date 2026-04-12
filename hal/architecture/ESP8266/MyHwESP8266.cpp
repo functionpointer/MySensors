@@ -6,7 +6,7 @@
  * network topology allowing messages to be routed to nodes.
  *
  * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2020 Sensnology AB
+ * Copyright (C) 2013-2026 Sensnology AB
  * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
  *
  * Documentation: http://www.mysensors.org
@@ -67,20 +67,16 @@ void hwWriteConfig(const int addr, uint8_t value)
 bool hwUniqueID(unique_id_t *uniqueID)
 {
 	// padding
-	(void)memset((uint8_t *)uniqueID, MY_HWID_PADDING_BYTE, sizeof(unique_id_t));
+	(void)memset(reinterpret_cast<uint8_t *>(uniqueID), MY_HWID_PADDING_BYTE, sizeof(unique_id_t));
 	uint32_t val = ESP.getChipId();
-	(void)memcpy((uint8_t *)uniqueID, &val, 4);
+	(void)memcpy(reinterpret_cast<uint8_t *>(uniqueID), &val, 4);
 	val = ESP.getFlashChipId();
-	(void)memcpy((uint8_t *)uniqueID + 4, &val, 4);
+	(void)memcpy(reinterpret_cast<uint8_t *>(uniqueID) + 4, &val, 4);
 	return true;
 }
 
 ssize_t hwGetentropy(void *__buffer, size_t __length)
 {
-	// cut length if > 256
-	if (__length > 256) {
-		__length = 256;
-	}
 	uint8_t *dst = (uint8_t *)__buffer;
 
 	// Start random number generator

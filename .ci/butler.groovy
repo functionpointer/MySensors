@@ -2,11 +2,9 @@
 def call(config) {
 	config.pr.setBuildStatus(config, 'PENDING', 'Toll gate (Butler)', 'Checking...', '${BUILD_URL}flowGraphTable/')
 	if (env.CHANGE_TARGET == 'master' &&
-		(env.CHANGE_AUTHOR != 'bblacey'     && env.CHANGE_AUTHOR != 'd00616'       &&
-		 env.CHANGE_AUTHOR != 'fallberg'    && env.CHANGE_AUTHOR != 'henrikekblad' &&
-		 env.CHANGE_AUTHOR != 'marceloaqno' && env.CHANGE_AUTHOR != 'mfalkvidd'    &&
-		 env.CHANGE_AUTHOR != 'scalz'       && env.CHANGE_AUTHOR != 'tbowmo'       &&
-		 env.CHANGE_AUTHOR != 'tekka007'    && env.CHANGE_AUTHOR != 'user2684'     &&
+		(env.CHANGE_AUTHOR != 'fallberg'    && env.CHANGE_AUTHOR != 'henrikekblad' && 
+		 env.CHANGE_AUTHOR != 'mfalkvidd'   && env.CHANGE_AUTHOR != 'scalz'        && 
+		 env.CHANGE_AUTHOR != 'tbowmo'      && env.CHANGE_AUTHOR != 'tekka007'     && 
 		 env.CHANGE_AUTHOR != 'Yveaux'))
 	{
 		config.pr.setBuildStatus(config, 'FAILURE', 'Toll gate (Butler)', 'This pull request targets master. I am afraid that is not permitted for '+env.CHANGE_AUTHOR, '')
@@ -18,13 +16,13 @@ def call(config) {
 		dir(config.repository_root) {
 			step([$class: 'GitChangelogRecorder', config: [configFile: 'git-changelog-settings.json',
 				createFileTemplateContent: '''
-# Changelog
-{{#commits}}
-### {{{messageTitle}}}
-{{{messageBody}}}
-[{{hash}}](https://github.com/mysensors/MySensors/commit/{{hash}}) by {{authorName}} at *{{commitTime}}*
-{{/commits}}
-''',
+                # Changelog
+                {{#commits}}
+                ### {{{messageTitle}}}
+                {{{messageBody}}}
+                [{{hash}}](https://github.com/mysensors/MySensors/commit/{{hash}}) by {{authorName}} at *{{commitTime}}*
+                {{/commits}}
+                ''',
 				createFileTemplateFile: '', createFileUseTemplateContent: true,
 				createFileUseTemplateFile: false, customIssues: [[link: '', name: '', pattern: '', title: ''],
 				[link: '', name: '', pattern: '', title: '']], dateFormat: 'YYYY-MM-dd HH:mm:ss',
@@ -56,10 +54,10 @@ def call(config) {
 	dir(config.repository_root) {
 		step([$class: 'GitChangelogRecorder', config: [configFile: 'git-changelog-settings.json',
 			createFileTemplateContent: '''
-{{#commits}}
-{{{messageTitle}}}
-{{/commits}}
-''',
+            {{#commits}}
+            {{{messageTitle}}}
+            {{/commits}}
+            ''',
 			createFileTemplateFile: '', createFileUseTemplateContent: true,
 			createFileUseTemplateFile: false, customIssues: [[link: '', name: '', pattern: '', title: ''],
 			[link: '', name: '', pattern: '', title: '']], dateFormat: 'YYYY-MM-dd HH:mm:ss',
@@ -83,12 +81,12 @@ def call(config) {
 		])
 		step([$class: 'GitChangelogRecorder', config: [configFile: 'git-changelog-settings.json',
 			createFileTemplateContent: '''
-{{#commits}}
-{{#messageBodyItems}}
-{{.}}
-{{/messageBodyItems}}
-{{/commits}}
-''',
+            {{#commits}}
+            {{#messageBodyItems}}
+            {{.}}
+            {{/messageBodyItems}}
+            {{/commits}}
+            ''',
 			createFileTemplateFile: '', createFileUseTemplateContent: true,
 			createFileUseTemplateFile: false, customIssues: [[link: '', name: '', pattern: '', title: ''],
 			[link: '', name: '', pattern: '', title: '']], dateFormat: 'YYYY-MM-dd HH:mm:ss',
@@ -112,7 +110,7 @@ def call(config) {
 		])
 	}
 
-	ret = sh(returnStatus: true,
+	def ret = sh(returnStatus: true,
 		script:"""#!/bin/bash
 							cd ${config.repository_root}/.ci
 							./butler.sh""")

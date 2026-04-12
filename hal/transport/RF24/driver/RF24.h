@@ -6,7 +6,7 @@
 * network topology allowing messages to be routed to nodes.
 *
 * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
-* Copyright (C) 2013-2020 Sensnology AB
+* Copyright (C) 2013-2026 Sensnology AB
 * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
 *
 * Documentation: http://www.mysensors.org
@@ -76,7 +76,7 @@
 #elif defined(LINUX_ARCH_RASPBERRYPI)
 #define DEFAULT_RF24_CE_PIN				(22)	//!< DEFAULT_RF24_CE_PIN
 //#define DEFAULT_RF24_CS_PIN			(24)	//!< DEFAULT_RF24_CS_PIN
-#elif defined(ARDUINO_ARCH_STM32F1)
+#elif defined(ARDUINO_ARCH_STM32)
 #define DEFAULT_RF24_CE_PIN				(PB0)	//!< DEFAULT_RF24_CE_PIN
 #elif defined(TEENSYDUINO)
 #define DEFAULT_RF24_CE_PIN				(9)		//!< DEFAULT_RF24_CE_PIN
@@ -177,8 +177,9 @@ LOCAL uint8_t RF24_RAW_writeByteRegister(const uint8_t cmd, const uint8_t value)
 
 // helper macros
 #define RF24_readByteRegister(__reg) RF24_RAW_readByteRegister(RF24_CMD_READ_REGISTER | (RF24_REGISTER_MASK & (__reg)))		//!< RF24_readByteRegister
+#define RF24_readMultiByteRegister(__reg,__buf,__len) RF24_spiMultiByteTransfer(RF24_CMD_READ_REGISTER | (RF24_REGISTER_MASK & (__reg)), (uint8_t *)__buf, __len, true)	//!< RF24_readMultiByteRegister
 #define RF24_writeByteRegister(__reg,__value) RF24_RAW_writeByteRegister(RF24_CMD_WRITE_REGISTER | (RF24_REGISTER_MASK & (__reg)), __value)	//!< RF24_writeByteRegister
-#define RF24_writeMultiByteRegister(__reg,__buf,__len) RF24_spiMultiByteTransfer(RF24_CMD_WRITE_REGISTER | (RF24_REGISTER_MASK & (__reg)),(uint8_t *)__buf, __len,false)	//!< RF24_writeMultiByteRegister
+#define RF24_writeMultiByteRegister(__reg,__buf,__len) RF24_spiMultiByteTransfer(RF24_CMD_WRITE_REGISTER | (RF24_REGISTER_MASK & (__reg)), (uint8_t *)__buf, __len, false)	//!< RF24_writeMultiByteRegister
 
 /**
 * @brief RF24_flushRX
@@ -278,6 +279,11 @@ LOCAL bool RF24_initialize(void);
 */
 LOCAL void RF24_setChannel(const uint8_t channel);
 /**
+* @brief RF24_getChannel
+* @return channel
+*/
+LOCAL uint8_t RF24_getChannel(void) __attribute__((unused));
+/**
 * @brief RF24_setRetries
 * @param retransmitDelay
 * @param retransmitCount
@@ -319,6 +325,11 @@ LOCAL void RF24_setAutoACK(const uint8_t pipe);
 */
 LOCAL void RF24_setDynamicPayload(const uint8_t pipe);
 /**
+* @brief RF24_getRFConfiguration
+* @return RF configuration
+*/
+LOCAL uint8_t RF24_getRFConfiguration(void) __attribute__((unused));
+/**
 * @brief RF24_setRFConfiguration
 * @param configuration
 */
@@ -357,8 +368,13 @@ LOCAL void RF24_enableFeatures(void);
 */
 LOCAL uint8_t RF24_getTxPowerPercent(void);
 /**
+* @brief RF24_getRawTxPowerLevel
+* @return power level
+*/
+LOCAL uint8_t RF24_getRawTxPowerLevel(void);
+/**
 * @brief RF24_getTxPowerLevel
-* @return
+* @return power level in pseudo-dBm
 */
 LOCAL int16_t RF24_getTxPowerLevel(void);
 /**

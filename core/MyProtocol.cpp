@@ -6,7 +6,7 @@
  * network topology allowing messages to be routed to nodes.
  *
  * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2020 Sensnology AB
+ * Copyright (C) 2013-2026 Sensnology AB
  * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
  *
  * Documentation: http://www.mysensors.org
@@ -146,9 +146,11 @@ bool protocolMQTT2MyMessage(MyMessage &message, char *topic, uint8_t *payload,
 				message.set(bvalue, blen);
 			} else {
 				// terminate string
-				char *value = (char *)payload;
-				value[length] = '\0';
-				message.set((const char*)payload);
+				char value[MAX_PAYLOAD_SIZE + 1];
+				const uint8_t payloadLen = (uint8_t)min((unsigned int)MAX_PAYLOAD_SIZE, length);
+				(void)memcpy(value, payload, payloadLen);
+				value[payloadLen] = '\0';
+				message.set(value);
 			}
 			break;
 		}

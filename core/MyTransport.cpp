@@ -6,7 +6,7 @@
  * network topology allowing messages to be routed to nodes.
  *
  * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2020 Sensnology AB
+ * Copyright (C) 2013-2026 Sensnology AB
  * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
  *
  * Documentation: http://www.mysensors.org
@@ -18,6 +18,7 @@
  */
 
 #include "MyTransport.h"
+#include "MyMultiMessage.h"
 
 // debug
 #if defined(MY_DEBUG_VERBOSE_TRANSPORT)
@@ -66,7 +67,7 @@ static uint32_t _lastSanityCheck;		//!< last sanity check
 
 // regular network discovery, sends I_DISCOVER_REQUESTS to update routing table
 // sufficient to have GW triggering requests to also update repeater nodes
-#if defined(MY_GATEWAY_FEATURE)
+#if defined(MY_GATEWAY_FEATURE) && !defined(MY_RS485)
 static uint32_t _lastNetworkDiscovery;	//!< last network discovery
 #endif
 
@@ -82,7 +83,7 @@ void stInitTransition(void)
 #if defined(MY_TRANSPORT_SANITY_CHECK)
 	_lastSanityCheck = hwMillis();
 #endif
-#if defined(MY_GATEWAY_FEATURE)
+#if defined(MY_GATEWAY_FEATURE) && !defined(MY_RS485)
 	_lastNetworkDiscovery = 0;
 #endif
 #if defined(MY_RAM_ROUTING_TABLE_ENABLED)
@@ -304,7 +305,7 @@ void stReadyTransition(void)
 // stReadyUpdate: monitors link
 void stReadyUpdate(void)
 {
-#if defined(MY_GATEWAY_FEATURE)
+#if defined(MY_GATEWAY_FEATURE) && !defined(MY_RS485)
 	if (!_lastNetworkDiscovery ||
 	        (hwMillis() - _lastNetworkDiscovery > MY_TRANSPORT_DISCOVERY_INTERVAL_MS)) {
 		_lastNetworkDiscovery = hwMillis();
@@ -545,16 +546,18 @@ bool transportRouteMessage(MyMessage &message, const bool scream)
 #endif
 		}
 #else
-		if (destination > GATEWAY_ADDRESS && destination < BROADCAST_ADDRESS) {
-			// node2node traffic: assume node is in vincinity. If transmission fails, hand over to parent
+		// not a repeater, all traffic routed via parent or N2N
+		route = _transportConfig.parentNodeId;
+		// Try node2node traffic if destination is not parent and is not a broadcast
+		if (destination != route && destination != BROADCAST_ADDRESS) {
+			// N2N: assume node is in vicinity. If transmission fails, hand over to parent
 			if (transportSendWrite(destination, message, scream)) {
 				TRANSPORT_DEBUG(PSTR("TSF:RTE:N2N OK\n"));
 				return true;
 			}
 			TRANSPORT_DEBUG(PSTR("!TSF:RTE:N2N FAIL\n"));
-			return false;//nope, do not hand over to parent and just fail
+		  return false;//shutternode: do not hand over to parent and just fail. better operations with dead gateway.
 		}
-		route = _transportConfig.parentNodeId;	// not a repeater, all traffic routed via parent
 #endif
 	}
 	// send message
@@ -697,7 +700,8 @@ void transportProcessMessage(void)
 	_transportSM.msgReceived = true;
 
 	// Is message addressed to this node?
-	if (destination == _transportConfig.nodeId) {
+	if (destination == _transportConfig.nodeId || (destination == BROADCAST_ADDRESS &&
+	        command == C_SET)) {
 		// null terminate data
 		_msg.data[msgLength] = 0u;
 		// Check if sender requests an echo.
@@ -826,11 +830,27 @@ void transportProcessMessage(void)
 #endif //defined(MY_OTA_LOG_RECEIVER_FEATURE)
 #if defined(MY_GATEWAY_FEATURE)
 		// Hand over message to controller
-		(void)gatewayTransportSend(_msg);
+		if (_msg.getType() == V_MULTI_MESSAGE) {
+			MyMessage msg2;
+			MyMultiMessage blob(&_msg);
+			while (blob.getNext(msg2)) {
+				(void)gatewayTransportSend(msg2);
+			}
+		} else {
+			(void)gatewayTransportSend(_msg);
+		}
 #endif
 		// Call incoming message callback if available
 		if (receive) {
-			receive(_msg);
+			if (_msg.getType() == V_MULTI_MESSAGE) {
+				MyMessage msg2;
+				MyMultiMessage blob(&_msg);
+				while (blob.getNext(msg2)) {
+					receive(msg2);
+				}
+			} else {
+				receive(_msg);
+			}
 		}
 	} else if (destination == BROADCAST_ADDRESS) {
 		TRANSPORT_DEBUG(PSTR("TSF:MSG:BC\n"));	// broadcast msg
@@ -1047,6 +1067,10 @@ void transportSaveRoutingTable(void)
 
 void transportSetRoute(const uint8_t node, const uint8_t route)
 {
+	// cppcheck-suppress knownConditionTrueFalse
+	if (node >= SIZE_ROUTES) {
+		return;
+	}
 #if defined(MY_RAM_ROUTING_TABLE_ENABLED)
 	_transportRoutingTable.route[node] = route;
 #else

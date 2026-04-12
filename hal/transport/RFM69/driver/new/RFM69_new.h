@@ -6,7 +6,7 @@
  * network topology allowing messages to be routed to nodes.
  *
  * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2020 Sensnology AB
+ * Copyright (C) 2013-2026 Sensnology AB
  * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
  *
  * Documentation: http://www.mysensors.org
@@ -25,7 +25,7 @@
  *	  Copyright Thomas Studwell (2014,2015)
  * - MySensors generic radio driver implementation Copyright (C) 2017, 2018 Olivier Mauti <olivier@mysensors.org>
  *
- * Changes by : @tekka, @scalz, @marceloagno
+ * Changes by : @tekka, @scalz, @marceloagno, @docbender
  *
  * Definitions for Semtech SX1231/H radios:
  * https://www.semtech.com/uploads/documents/sx1231.pdf
@@ -56,11 +56,16 @@
 * | | RFM69 | SWR  | SEND,TO=%%d,SEQ=%%d,RETRY=%%d        | Send to (TO), sequence number (SWQ), retry if no ACK received (RETRY)
 * | | RFM69 | SWR  | ACK,FROM=%%d,SEQ=%%d,RSSI=%%d        | ACK received from (FROM), sequence nr (SEQ), ACK RSSI (RSSI)
 * |!| RFM69 | SWR  | NACK                                 | Message sent, no ACK received
+* |!| RFM69 | SWR  | NOIRQ                                | Interrupt from IRQ pin not received after message was sent
 * | | RFM69 | SPP  | PCT=%%d,TX LEVEL=%%d                 | Set TX level, input TX percent (PCT)
 * | | RFM69 | RSL  |                                      | Radio in sleep mode
 * | | RFM69 | RSB  |                                      | Radio in standby mode
+* | | RFM69 | RRX  |                                      | Radio in receive mode
+* | | RFM69 | RTX  |                                      | Radio in transmit mode
+* | | RFM69 | RSY  |                                      | Radio in synth mode
 * | | RFM69 | PWD  |                                      | Power down radio
 * | | RFM69 | PWU  |                                      | Power up radio
+* | | RFM69 | DUMP | %s                                   | Dump radio registers
 *
 * @brief API declaration for RFM69
 *
@@ -90,7 +95,7 @@
 #define DEFAULT_RFM69_IRQ_PIN			(2)												//!< DEFAULT_RFM69_IRQ_PIN
 #elif defined(LINUX_ARCH_RASPBERRYPI)
 #define DEFAULT_RFM69_IRQ_PIN			(22)											//!< DEFAULT_RFM69_IRQ_PIN
-#elif defined(ARDUINO_ARCH_STM32F1)
+#elif defined(ARDUINO_ARCH_STM32)
 #define DEFAULT_RFM69_IRQ_PIN			(PA3)											//!< DEFAULT_RFM69_IRQ_PIN
 #elif defined(TEENSYDUINO)
 #define DEFAULT_RFM69_IRQ_PIN			(8)												//!< DEFAULT_RFM69_IRQ_PIN
@@ -127,7 +132,7 @@
 #endif
 
 #define RFM69_FIFO_SIZE                  (0xFFu)		//!< Max number of bytes the Rx/Tx FIFO can hold
-#define RFM69_MAX_PACKET_LEN             (0x40u)		//!< This is the maximum number of bytes that can be carried 
+#define RFM69_MAX_PACKET_LEN             static_cast<size_t>(0x40u)	//!< This is the maximum number of bytes that can be carried 
 #define RFM69_ATC_TARGET_RANGE_DBM       (2u)				//!< ATC target range +/- dBm
 #define RFM69_PACKET_HEADER_VERSION      (1u)				//!< RFM69 packet header version
 #define RFM69_MIN_PACKET_HEADER_VERSION  (1u)				//!< Minimal RFM69 packet header version
@@ -413,6 +418,11 @@ LOCAL bool RFM69_sendFrame(rfm69_packet_t *packet, const bool increaseSequenceCo
 LOCAL bool RFM69_send(const uint8_t recipient, uint8_t *data, const uint8_t len,
                       const rfm69_controlFlags_t flags, const bool increaseSequenceCounter = true, const bool csma = true);
 
+/**
+* @brief Gets the transmitter and receiver center frequency
+* @return frequencyHz Frequency in Hz
+*/
+LOCAL uint32_t RFM69_getFrequency(void) __attribute__((unused));
 /**
 * @brief Sets the transmitter and receiver center frequency
 * @param frequencyHz Frequency in Hz

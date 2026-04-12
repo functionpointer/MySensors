@@ -6,7 +6,7 @@
  * network topology allowing messages to be routed to nodes.
  *
  * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2020 Sensnology AB
+ * Copyright (C) 2013-2026 Sensnology AB
  * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
  *
  * Documentation: http://www.mysensors.org
@@ -98,6 +98,11 @@ void _infiniteLoop(void)
 
 void _begin(void)
 {
+#if defined(MY_DIAGNOSTICS)
+	(void)hwInit();
+	diagnosticsRun();
+	_infiniteLoop();
+#endif
 #if defined(MY_CORE_ONLY)
 	// initialize HW and run setup if present
 	(void)hwInit();
@@ -250,6 +255,7 @@ void presentNode(void)
 	(void)present(NODE_SENSOR_ID, S_ARDUINO_NODE);
 #endif
 
+#if !defined(MY_DISABLE_CONFIG_REQUEST)
 	// Send a configuration exchange request to controller
 	// Node sends parent node. Controller answers with latest node configuration
 	(void)_sendRoute(build(_msgTmp, GATEWAY_ADDRESS, NODE_SENSOR_ID, C_INTERNAL,
@@ -257,6 +263,7 @@ void presentNode(void)
 
 	// Wait configuration reply.
 	(void)wait(2000, C_INTERNAL, I_CONFIG);
+#endif
 
 #endif
 
@@ -808,7 +815,7 @@ void _nodeLock(const char *str)
 		CORE_DEBUG(PSTR("MCO:NLK:TSL\n"));	// sleep transport
 #endif
 		setIndication(INDICATION_SLEEP);
-		(void)hwSleep((uint32_t)1000*60*30); // Sleep for 30 min before resending LOCKED message
+		(void)hwSleep((uint32_t)1000u * 60u * 30u); // Sleep for 30 min before resending LOCKED message
 		setIndication(INDICATION_WAKEUP);
 	}
 #else

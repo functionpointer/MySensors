@@ -6,7 +6,7 @@
  * network topology allowing messages to be routed to nodes.
  *
  * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2020 Sensnology AB
+ * Copyright (C) 2013-2026 Sensnology AB
  * Full contributor list: https://github.com/mysensors/MySensors/graphs/contributors
  *
  * Documentation: http://www.mysensors.org
@@ -18,7 +18,7 @@
  *
  * Arduino core for ESP32: https://github.com/espressif/arduino-esp32
  *
- * MySensors ESP32 implementation, Copyright (C) 2017-2018 Olivier Mauti <olivier@mysensors.org>
+ * MySensors ESP32 implementation, Copyright (C) 2017-2026 Olivier Mauti <olivier@mysensors.org>
  *
  * Radio wiring ESP32(Node32s): RF24, RFM69, RFM95:
  *
@@ -75,6 +75,9 @@
 #define hwMicros() micros()
 #define hwRandomNumberInit() randomSeed(esp_random())
 #define hwGetSleepRemaining() (0ul)
+
+// experimental, not documented feature
+extern "C" int rom_phy_get_vdd33();
 
 bool hwInit(void);
 void hwReadConfigBlock(void *buf, void *addr, size_t length);
